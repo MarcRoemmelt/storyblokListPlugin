@@ -1,65 +1,133 @@
 <template>
-  <div>
-    Google snippet preview:
-    <div class="p-metatags__preview">
-      <div class="p-metatags__google-title">{{ model.title || 'Your title' }}</div>
-      <div class="p-metatags__google-link">yoursite.com/example</div>
-      <div class="p-metatags__google-description">{{ model.description || 'Your description' }}</div>
-    </div>
-    <div class="uk-form-row">
-      <label>Meta Title</label>
-      <input type="text" placeholder="Your title" v-model="model.title" class="uk-width-1-1">
-    </div>
+  <div class="List">
+    <ol class="List__list uk-margin-bottom-remove">
+      <li
+        v-for="(item, index) in model.items"
+        :key="index"
+        class="List__list-item"
+      >
+        <div class="uk-flex uk-flex-middle">
+          <input
+            v-model="model.items[index].text"
+            class="uk-form-small uk-width-1-1"
+            :aria-label="`List item ${index}`"
+          >
+          <a
+            class="assets__item-trash"
+            aria-label="Remove item"
+            @click="removeItem(index)"
+          >
+            <i class="uk-icon-minus-circle"></i>
+          </a>
+        </div>
 
-    <div class="uk-form-row">
-      <label>Meta description</label>
-      <textarea rows="4" placeholder="Your description" v-model="model.description" class="uk-width-1-1"></textarea>
-    </div>
+        <ol class="List__children uk-margin-bottom-remove">
+          <li
+            v-for="(item, childIndex) in model.items[index].children"
+            :key="childIndex"
+            class="List__children-item uk-flex uk-flex-middle"
+          >
+            <input
+              v-model="model.items[index].children[childIndex]"
+              class="uk-form-small uk-width-1-1"
+              :aria-label="`Child ${childIndex} of list item ${index}`"
+            >
+            <a
+              class="assets__item-trash"
+              aria-label="Remove item"
+              @click="removeChild(childIndex, model.items[index])"
+            >
+              <i class="uk-icon-minus-circle"></i>
+            </a>
+          </li>
+        </ol>
+        <a
+          class="blok__small-btn uk-flex uk-flex-right uk-margin-small-top"
+          @click="addChild(model.items[index])"
+        >
+          <i class="uk-icon-plus-circle uk-margin-small-right"/>
+            Add Child
+        </a>
+      </li>
+    </ol>
+    <a
+      v-if="!limitReached"
+      class="blok__full-btn uk-margin-small-top"
+      @click="addItem"
+    >
+      <i class="uk-icon-plus-circle uk-margin-small-right"/>
+        Add item
+    </a>
   </div>
 </template>
 
 <script>
 export default {
   mixins: [window.Storyblok.plugin],
+  computed: {
+    limitReached() {
+      return this.options.limit && this.model.items.length >= this.options.limit;
+    },
+  },
+  watch: {
+    model: {
+      deep: true,
+      handler(value) {
+        this.$emit('changed-model', value);
+      },
+    },
+  },
   methods: {
     initWith() {
       return {
-        // needs to be equal to your storyblok plugin name
-        plugin: 'my-plugin-name',
-        title: '',
-        description: ''
-      }
+        items: [
+          {
+            text: '',
+            children: []
+          }
+        ],
+        plugin: 'list-marcroemmelt',
+      };
     },
-    pluginCreated() {
-      // eslint-disable-next-line
-      console.log('View source and customize: https://github.com/storyblok/storyblok-fieldtype')
+    addItem() {
+      this.model.items.push(
+        {
+          text: '',
+          children: []
+        }
+      );
+    },
+    addChild(listItem) {
+      listItem.children.push('');
+    },
+    removeItem(index) {
+      this.model.items = this.model.items.filter((_, i) => i !== index);
+    },
+    removeChild(childIndex, listItem) {
+      listItem.children = listItem.children.filter((_, i) => i !== childIndex);
     }
   },
-  watch: {
-    'model': {
-      handler: function (value) {
-        this.$emit('changed-model', value);
-      },
-      deep: true
-    }
-  }
 }
 </script>
 
 <style>
-  .p-metatags__google-title {
-    color: blue;
-    text-decoration: underline;
-  }
-
-  .p-metatags__google-link {
-    color: green;
-  }
-
-  .p-metatags__preview {
-    margin: 5px 0 15px;
-    padding: 10px;
-    color: #000;
-    background: #FFF;
-  }
+.List__list {
+  padding-left: 0;
+}
+.List__list-item {
+  margin-bottom: 10px;
+}
+.List__list-item + .List__list-item {
+  margin-top: 5px;
+}
+.List__children {
+  padding-left: 24px;
+  padding-right: 24px;
+}
+.List__children-item {
+  margin-top: 5px;
+}
+.List__children-item > input {
+  font-size: 0.5em;
+}
 </style>
